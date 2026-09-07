@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Secret scan
+        # First, before anything else. A leaked Supabase service key in a public
+        # hackathon repo costs you the whole database, and it usually happens
+        # via a key pasted in "just to test".
+        run: python scripts/check_secrets.py
+
+      - name: Property tests
+        run: pytest -q
+
+      - name: Basket sanity
+        # Weights that do not sum to 1 produce an index that looks fine and is
+        # wrong. Catch it in CI, not in a published number.
+        run: |
+          python - <<'PY'
+          import yaml, sys
+          b = yaml.safe_load(open("config/basket.yaml"))
+          rw = sum(r["weight"] for r in b["routes"])
+          aw = sum(b["apw_weights"].values())
+          print(f"route weights sum to {rw:.6f}, APW weights to {aw:.6f}")
+          bad = []
+          if abs(rw - 1.0) > 0.02: bad.append(f"route weights sum to {rw}")
+          if abs(aw - 1.0) > 0.001: bad.append(f"APW weights sum to {aw}")
+          if len({r["route"] for r in b["routes"]}) != len(b["routes"]):
+              bad.append("duplicate route in basket")
+          if set(b["apw_weights"]) != set(b["collection"]["windows"]):
+              bad.append("apw_weights and collection.windows disagree")
+          if "PLACEHOLDER" in b["weight_source"]:
+              print("::warning::basket still uses placeholder weights — "
+                    "substitute DGCA O-D passenger data before publishing")
+          if bad:
+              sys.exit("basket invalid: " + "; ".join(bad))
+          PY
+
+      - name: Dry-run the collection job
+        # Exercises the whole path — config load, source construction,
+        # compliance gate, cleaning, store serialisation — without a network
+        # call or a credential.
+        run: python -m scripts.collect --dry-run
+
+  keepalive:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "repo active $(date -u)"
+        # Real keepalive lives in .github/workflows/keepalive.yml — it has to
+        # push a commit, because GitHub counts commit activity, not workflow
+        # runs, when deciding to disable a schedule.
