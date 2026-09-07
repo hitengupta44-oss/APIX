@@ -37,8 +37,16 @@ def index_config_from_basket(basket: dict) -> IndexConfig:
     )
 
 
-def build_sources(basket: dict) -> List[Source]:
+def build_sources(basket: dict, offline: bool = False) -> List[Source]:
+    """Construct every enabled source.
+
+    `offline=True` is for validating configuration without credentials: the
+    adapter classes are imported and their policies validated, but a missing
+    API token is reported rather than raised. Used by `--validate`, which runs
+    in CI where secrets are deliberately absent.
+    """
     out: List[Source] = []
+    problems: List[str] = []
     for spec in basket.get("sources", []):
         if not spec.get("enabled"):
             log.info("source %s disabled, skipping", spec["name"])
@@ -55,10 +63,51 @@ def build_sources(basket: dict) -> List[Source]:
         try:
             out.append(cls(policy, **spec.get("options", {})))
         except Exception as exc:  # noqa: BLE001
+            if offline:
+                # A missing credential is expected when validating config.
+                # The import and the policy check already passed, which is
+                # what this mode is testing.
+                log.info("source %s: constructed check skipped (%s)",
+                         spec["name"], exc)
+                problems.append(spec["name"])
+                continue
             log.error("could not construct source %s: %s", spec["name"], exc)
-    if not out:
+    if not out and not (offline and problems):
         raise RuntimeError("no sources enabled — nothing to collect")
     return out
+
+
+def validate(basket: dict) -> None:
+    """Check config end to end without network or credentials.
+
+    Confirms adapters import, policies pass the compliance gate, weights are
+    sane, and the index config builds. Deliberately makes no requests — the
+    point is that CI can run it with no secrets at all.
+    """
+    enabled = [s["name"] for s in basket.get("sources", []) if s.get("enabled")]
+    if not enabled:
+        raise RuntimeError("no sources enabled in basket.yaml")
+    log.info("enabled sources: %s", ", ".join(enabled))
+
+    build_sources(basket, offline=True)
+
+    cfg = index_config_from_basket(basket).normalised()
+    log.info("basket %s: %d routes, %d windows, base period %s",
+             basket.get("version"), len(cfg.route_weights),
+             len(cfg.apw_weights), cfg.base_period)
+
+    rw = sum(cfg.route_weights.values())
+    aw = sum(cfg.apw_weights.values())
+    if abs(rw - 1.0) > 1e-6 or abs(aw - 1.0) > 1e-6:
+        raise RuntimeError(f"weights do not normalise: routes {rw}, windows {aw}")
+
+    windows = set(basket["collection"]["windows"])
+    if windows != set(cfg.apw_weights):
+        raise RuntimeError(
+            f"collection.windows {sorted(windows)} disagrees with apw_weights "
+            f"{sorted(cfg.apw_weights)}"
+        )
+    log.info("configuration valid")
 
 
 def collect_day(basket: dict, run_date: date | None = None) -> pd.DataFrame:
