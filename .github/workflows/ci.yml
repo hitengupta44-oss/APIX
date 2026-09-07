@@ -26,7 +26,10 @@ jobs:
         run: python scripts/check_secrets.py
 
       - name: Property tests
-        run: pytest -q
+        # `python -m` also puts the working directory on sys.path. conftest.py
+        # at the root covers the bare `pytest` case too, so both work — belt
+        # and braces, because this failure only ever shows up in CI.
+        run: python -m pytest -q
 
       - name: Basket sanity
         # Weights that do not sum to 1 produce an index that looks fine and is
