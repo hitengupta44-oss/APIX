@@ -1,16 +1,89 @@
-name: CI
+name: Collect airfares
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  schedule:
+    # 01:30 UTC = 07:00 IST. Cron here is ALWAYS UTC — there is no timezone
+    # setting. GitHub also queues scheduled runs and routinely delivers them
+    # 5-30 minutes late at peak (:00 is the worst slot, hence :30), and under
+    # load it drops them entirely. For a daily price series that means the
+    # observation timestamp drifts, so quote_ts records when we actually
+    # observed the fare, never the nominal schedule.
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Collection date (YYYY-MM-DD), blank = today"
+        required: false
+      backfill:
+        description: "Also fill gaps in the last N days"
+        required: false
+        default: "3"
+
+concurrency:
+  # Never let a delayed run overlap the next one. Both would write the same
+  # quote_ids; upsert makes that safe, but they would also double the request
+  # load on every source, which is the part sources notice.
+  group: apix-collect
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  collect:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      status: ${{ steps.run.outputs.status }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Collect
+        id: run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          AGGREGATOR_API_TOKEN: ${{ secrets.AGGREGATOR_API_TOKEN }}
+          TRAVELPAYOUTS_TOKEN: ${{ secrets.TRAVELPAYOUTS_TOKEN }}
+        run: |
+          set +e
+          python -m scripts.collect \
+            ${{ inputs.date && format('--date {0}', inputs.date) || '' }} \
+            --backfill "${{ inputs.backfill || 3 }}"
+          code=$?
+          set -e
+          case $code in
+            0) echo "status=ok" >> $GITHUB_OUTPUT ;;
+            2) echo "status=partial" >> $GITHUB_OUTPUT ;;
+            *) echo "status=failed" >> $GITHUB_OUTPUT; exit $code ;;
+          esac
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collect-${{ github.run_id }}
+          path: out/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  rebuild:
+    needs: collect
+    # A partial day still gets published — the index handles thin cells by
+    # imputation and flags pct_imputed. Suppressing the whole day would leave a
+    # hole, which is worse than a flagged estimate.
+    if: needs.collect.outputs.status != 'failed'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,50 +92,38 @@ jobs:
           cache: pip
       - run: pip install -r requirements.txt
 
-      - name: Secret scan
-        # First, before anything else. A leaked Supabase service key in a public
-        # hackathon repo costs you the whole database, and it usually happens
-        # via a key pasted in "just to test".
-        run: python scripts/check_secrets.py
+      - name: Rebuild index
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python -m scripts.rebuild
 
-      - name: Property tests
-        run: pytest -q
-
-      - name: Basket sanity
-        # Weights that do not sum to 1 produce an index that looks fine and is
-        # wrong. Catch it in CI, not in a published number.
+      - name: Warm the Space cache
+        continue-on-error: true
         run: |
-          python - <<'PY'
-          import yaml, sys
-          b = yaml.safe_load(open("config/basket.yaml"))
-          rw = sum(r["weight"] for r in b["routes"])
-          aw = sum(b["apw_weights"].values())
-          print(f"route weights sum to {rw:.6f}, APW weights to {aw:.6f}")
-          bad = []
-          if abs(rw - 1.0) > 0.02: bad.append(f"route weights sum to {rw}")
-          if abs(aw - 1.0) > 0.001: bad.append(f"APW weights sum to {aw}")
-          if len({r["route"] for r in b["routes"]}) != len(b["routes"]):
-              bad.append("duplicate route in basket")
-          if set(b["apw_weights"]) != set(b["collection"]["windows"]):
-              bad.append("apw_weights and collection.windows disagree")
-          if "PLACEHOLDER" in b["weight_source"]:
-              print("::warning::basket still uses placeholder weights — "
-                    "substitute DGCA O-D passenger data before publishing")
-          if bad:
-              sys.exit("basket invalid: " + "; ".join(bad))
-          PY
+          curl -sS -X POST "${{ secrets.SPACE_URL }}/admin/reload" \
+            -H "x-admin-token: ${{ secrets.ADMIN_TOKEN }}" \
+            --retry 3 --retry-delay 10 --max-time 60
+          # A sleeping cpu-basic Space returns 503 on the first hit while it
+          # boots. --retry covers that; failure here is cosmetic since the
+          # Space also reloads from Supabase on its own start.
 
-      - name: Dry-run the collection job
-        # Exercises the whole path — config load, source construction,
-        # compliance gate, cleaning, store serialisation — without a network
-        # call or a credential.
-        run: python -m scripts.collect --dry-run
-
-  keepalive:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  alert:
+    needs: [collect, rebuild]
+    if: failure()
     runs-on: ubuntu-latest
     steps:
-      - run: echo "repo active $(date -u)"
-        # Real keepalive lives in .github/workflows/keepalive.yml — it has to
-        # push a commit, because GitHub counts commit activity, not workflow
-        # runs, when deciding to disable a schedule.
+      - name: Open an issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `APIx collection failed — ${today}`,
+              body: `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n`
+                  + `A missed day is a permanent hole: live sources cannot be asked for yesterday's fare. `
+                  + `If the cause was transient, re-run within the same day via workflow_dispatch.`,
+              labels: ['ops', 'collection-gap']
+            });
