@@ -1,0 +1,130 @@
+period,group_code,group_name,sector,index_value,inflation_pct
+2026-07-01,01.1,Food,combined,109.39,5.52
+2026-07-01,01.1,Food,rural,109.21,5.79
+2026-07-01,01.1,Food,urban,109.7,5.05
+2026-07-01,01.2,Beverages,combined,103.66,0.04
+2026-07-01,01.2,Beverages,rural,103.85,0.13
+2026-07-01,01.2,Beverages,urban,103.42,-0.08
+2026-07-01,01.3,goods for food,combined,108.52,3.5
+2026-07-01,01.3,goods for food,rural,108.42,3.5
+2026-07-01,01.3,goods for food,urban,108.78,3.5
+2026-07-01,02.1,Alcoholic beverages,combined,106.89,2.35
+2026-07-01,02.1,Alcoholic beverages,rural,107.29,2.5
+2026-07-01,02.1,Alcoholic beverages,urban,106.05,2.03
+2026-07-01,02.3,Paan and tobacco,combined,109.39,7.12
+2026-07-01,02.3,Paan and tobacco,rural,108.78,6.43
+2026-07-01,02.3,Paan and tobacco,urban,110.88,8.81
+2026-07-01,03.1,Clothing,combined,109.01,3.78
+2026-07-01,03.1,Clothing,rural,109.95,4.29
+2026-07-01,03.1,Clothing,urban,107.47,2.92
+2026-07-01,03.2,Footwear,combined,104.87,0.75
+2026-07-01,03.2,Footwear,rural,106.33,1.8
+2026-07-01,03.2,Footwear,urban,102.61,-0.88
+2026-07-01,04.1,housing,combined,103.63,2.11
+2026-07-01,04.1,housing,rural,104.08,2.61
+2026-07-01,04.1,housing,urban,103.5,1.96
+2026-07-01,04.3,of the dwelling,combined,107.06,3.4
+2026-07-01,04.3,of the dwelling,rural,107.31,3.54
+2026-07-01,04.3,of the dwelling,urban,106.62,3.18
+2026-07-01,04.4,services relating to the dwelling,combined,102.62,1.18
+2026-07-01,04.4,services relating to the dwelling,rural,102.02,1.09
+2026-07-01,04.4,services relating to the dwelling,urban,102.88,1.23
+2026-07-01,04.5,"Electricity, gas and other fuels",combined,103.61,2.02
+2026-07-01,04.5,"Electricity, gas and other fuels",rural,104.43,2.14
+2026-07-01,04.5,"Electricity, gas and other fuels",urban,102.36,1.85
+2026-07-01,05.1,carpets,combined,107.38,3.56
+2026-07-01,05.1,carpets,rural,107.95,3.92
+2026-07-01,05.1,carpets,urban,106.48,2.97
+2026-07-01,05.2,Household textiles,combined,106.98,2.91
+2026-07-01,05.2,Household textiles,rural,107.9,3.69
+2026-07-01,05.2,Household textiles,urban,105.44,1.61
+2026-07-01,05.3,Household appliances,combined,104.54,2.02
+2026-07-01,05.3,Household appliances,rural,105.66,2.94
+2026-07-01,05.3,Household appliances,urban,103.26,0.96
+2026-07-01,05.4,household utensils,combined,109.5,5.01
+2026-07-01,05.4,household utensils,rural,110.51,5.82
+2026-07-01,05.4,household utensils,urban,107.87,3.7
+2026-07-01,05.5,and garden,combined,99.1,-0.76
+2026-07-01,05.5,and garden,rural,98.98,-1.3
+2026-07-01,05.5,and garden,urban,99.35,0.35
+2026-07-01,05.6,household maintenance,combined,104.27,1.87
+2026-07-01,05.6,household maintenance,rural,104.1,1.94
+2026-07-01,05.6,household maintenance,urban,104.48,1.77
+2026-07-01,06.1,Medicines and health products,combined,105.28,1.26
+2026-07-01,06.1,Medicines and health products,rural,105.35,1.51
+2026-07-01,06.1,Medicines and health products,urban,105.16,0.86
+2026-07-01,06.2,Outpatient care services,combined,103.67,1.58
+2026-07-01,06.2,Outpatient care services,rural,102.61,1.0
+2026-07-01,06.2,Outpatient care services,urban,105.21,2.42
+2026-07-01,06.3,Inpatient care services,combined,104.68,1.57
+2026-07-01,06.3,Inpatient care services,rural,103.59,0.93
+2026-07-01,06.3,Inpatient care services,urban,106.21,2.46
+2026-07-01,06.4,Other health services,combined,103.31,1.25
+2026-07-01,06.4,Other health services,rural,102.91,1.02
+2026-07-01,06.4,Other health services,urban,103.98,1.63
+2026-07-01,07.1,Purchase of vehicles,combined,98.56,-4.37
+2026-07-01,07.1,Purchase of vehicles,rural,99.17,-4.3
+2026-07-01,07.1,Purchase of vehicles,urban,97.96,-4.45
+2026-07-01,07.2,Operation of personal transport equipment,combined,107.41,7.36
+2026-07-01,07.2,Operation of personal transport equipment,rural,107.39,7.35
+2026-07-01,07.2,Operation of personal transport equipment,urban,107.43,7.37
+2026-07-01,07.3,Passenger transport services,combined,105.39,2.9
+2026-07-01,07.3,Passenger transport services,rural,105.24,2.81
+2026-07-01,07.3,Passenger transport services,urban,105.6,3.01
+2026-07-01,07.4,Transport services for goods,combined,108.01,7.77
+2026-07-01,07.4,Transport services for goods,rural,107.83,7.55
+2026-07-01,07.4,Transport services for goods,urban,108.13,7.91
+2026-07-01,08.1,Information and communication equipment,combined,101.17,1.86
+2026-07-01,08.1,Information and communication equipment,rural,101.74,2.51
+2026-07-01,08.1,Information and communication equipment,urban,100.51,1.08
+2026-07-01,08.3,Information and communication services,combined,105.12,0.3
+2026-07-01,08.3,Information and communication services,rural,105.3,0.31
+2026-07-01,08.3,Information and communication services,urban,104.89,0.29
+2026-07-01,09.1,Recreational durables,combined,100.31,-0.99
+2026-07-01,09.1,Recreational durables,rural,97.97,-2.39
+2026-07-01,09.1,Recreational durables,urban,101.31,-0.4
+2026-07-01,09.2,Other recreational goods,combined,107.0,3.09
+2026-07-01,09.2,Other recreational goods,rural,107.07,3.32
+2026-07-01,09.2,Other recreational goods,urban,106.9,2.77
+2026-07-01,09.3,Garden products and pets,combined,110.33,2.37
+2026-07-01,09.3,Garden products and pets,rural,110.99,1.82
+2026-07-01,09.3,Garden products and pets,urban,109.76,2.87
+2026-07-01,09.4,Recreational services,combined,103.97,2.4
+2026-07-01,09.4,Recreational services,rural,106.52,4.65
+2026-07-01,09.4,Recreational services,urban,102.28,0.9
+2026-07-01,09.5,Cultural goods,combined,104.85,2.3
+2026-07-01,09.5,Cultural goods,rural,103.73,2.2
+2026-07-01,09.5,Cultural goods,urban,105.98,2.4
+2026-07-01,09.6,Cultural services,combined,105.24,2.35
+2026-07-01,09.6,Cultural services,rural,104.95,2.72
+2026-07-01,09.6,Cultural services,urban,105.42,2.11
+2026-07-01,09.7,"Newspapers, books and stationery",combined,102.91,0.79
+2026-07-01,09.7,"Newspapers, books and stationery",rural,103.1,0.97
+2026-07-01,09.7,"Newspapers, books and stationery",urban,102.68,0.58
+2026-07-01,10.1,Early childhood and primary education,combined,110.37,4.25
+2026-07-01,10.1,Early childhood and primary education,rural,109.56,3.71
+2026-07-01,10.1,Early childhood and primary education,urban,110.87,4.58
+2026-07-01,10.2,Secondary education,combined,110.46,4.33
+2026-07-01,10.2,Secondary education,rural,108.88,3.85
+2026-07-01,10.2,Secondary education,urban,111.35,4.59
+2026-07-01,10.4,Higher education,combined,106.48,3.52
+2026-07-01,10.4,Higher education,rural,103.28,1.31
+2026-07-01,10.4,Higher education,urban,108.22,4.71
+2026-07-01,10.5,Education not defined by level,combined,104.03,1.52
+2026-07-01,10.5,Education not defined by level,rural,103.75,1.29
+2026-07-01,10.5,Education not defined by level,urban,104.31,1.75
+2026-07-01,11.1,Food and beverage serving services,combined,112.72,7.75
+2026-07-01,11.1,Food and beverage serving services,rural,112.09,7.8
+2026-07-01,11.1,Food and beverage serving services,urban,113.27,7.71
+2026-07-01,11.2,Accommodation services,combined,104.86,2.33
+2026-07-01,11.2,Accommodation services,rural,103.91,1.95
+2026-07-01,11.2,Accommodation services,urban,106.02,2.8
+2026-07-01,13.1,Personal care,combined,105.98,2.24
+2026-07-01,13.1,Personal care,rural,105.75,2.25
+2026-07-01,13.1,Personal care,urban,106.29,2.22
+2026-07-01,13.2,Other personal effects,combined,169.66,43.54
+2026-07-01,13.2,Other personal effects,rural,174.11,46.57
+2026-07-01,13.2,Other personal effects,urban,164.07,39.69
+2026-07-01,13.9,Other services,combined,103.43,1.76
+2026-07-01,13.9,Other services,rural,103.88,2.09
+2026-07-01,13.9,Other services,urban,102.74,1.24

@@ -1,0 +1,6 @@
+# TEMPLATE — no values on purpose.
+# Fill from https://www.cpi.mospi.gov.in -> Announcement tab -> CPI 2024 item-level
+# weighting diagram. Save as data/cpi_2024_weights.csv (drop the .TEMPLATE).
+# Weights are PERCENTAGES of the whole basket (e.g. 0.198 means 0.198%).
+# Keep every item under division 07 so the transport-division share can be checked.
+item,rural,urban,combined

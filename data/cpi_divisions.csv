@@ -1,0 +1,37 @@
+period,division_code,division_name,sector,index_value,inflation_pct
+2026-07-01,01,Food and beverages,combined,109.1,5.24
+2026-07-01,01,Food and beverages,rural,108.97,5.53
+2026-07-01,01,Food and beverages,urban,109.33,4.75
+2026-07-01,02,"Paan, tobacco and intoxicants",combined,108.18,4.79
+2026-07-01,02,"Paan, tobacco and intoxicants",rural,108.07,4.55
+2026-07-01,02,"Paan, tobacco and intoxicants",urban,108.42,5.32
+2026-07-01,03,Clothing and footwear,combined,108.45,3.38
+2026-07-01,03,Clothing and footwear,rural,109.47,3.97
+2026-07-01,03,Clothing and footwear,urban,106.8,2.41
+2026-07-01,04,"Housing, water, electricity, gas and other fuels",combined,103.85,2.16
+2026-07-01,04,"Housing, water, electricity, gas and other fuels",rural,104.61,2.47
+2026-07-01,04,"Housing, water, electricity, gas and other fuels",urban,103.4,1.98
+2026-07-01,05,"Furnishings, household equipment and routine household maintenance",combined,105.21,2.4
+2026-07-01,05,"Furnishings, household equipment and routine household maintenance",rural,105.62,2.79
+2026-07-01,05,"Furnishings, household equipment and routine household maintenance",urban,104.66,1.88
+2026-07-01,06,Health,combined,104.75,1.34
+2026-07-01,06,Health,rural,104.49,1.33
+2026-07-01,06,Health,urban,105.15,1.37
+2026-07-01,07,Transport,combined,105.63,4.43
+2026-07-01,07,Transport,rural,105.73,4.49
+2026-07-01,07,Transport,urban,105.51,4.37
+2026-07-01,08,Information and communication,combined,104.26,0.63
+2026-07-01,08,Information and communication,rural,104.55,0.76
+2026-07-01,08,Information and communication,urban,103.89,0.46
+2026-07-01,09,"Recreation, sport and culture",combined,104.49,1.64
+2026-07-01,09,"Recreation, sport and culture",rural,104.94,2.0
+2026-07-01,09,"Recreation, sport and culture",urban,104.04,1.28
+2026-07-01,10,Education services,combined,108.58,3.64
+2026-07-01,10,Education services,rural,107.17,2.83
+2026-07-01,10,Education services,urban,109.51,4.17
+2026-07-01,11,Restaurants and accommodation services,combined,112.68,7.72
+2026-07-01,11,Restaurants and accommodation services,rural,112.04,7.77
+2026-07-01,11,Restaurants and accommodation services,urban,113.24,7.68
+2026-07-01,13,"Personal care, social protection and miscellaneous goods and services",combined,123.51,14.77
+2026-07-01,13,"Personal care, social protection and miscellaneous goods and services",rural,124.28,15.57
+2026-07-01,13,"Personal care, social protection and miscellaneous goods and services",urban,122.5,13.74
