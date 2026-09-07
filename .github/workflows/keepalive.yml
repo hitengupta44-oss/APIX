@@ -1,0 +1,80 @@
+name: Keepalive and gap check
+
+on:
+  schedule:
+    - cron: "15 6 * * 1"      # Mondays, 06:15 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Touch heartbeat
+        # GitHub disables scheduled workflows in a repo with no *commit*
+        # activity for 60 days. Workflow runs do not count. A hackathon repo
+        # goes quiet after submission and the collection silently stops — you
+        # find out when you open the dashboard to demo 30 days of data and see
+        # 12. This weekly commit keeps the schedule alive.
+        run: |
+          date -u +"last-active: %Y-%m-%dT%H:%M:%SZ" > .github/heartbeat
+          git config user.name  "apix-bot"
+          git config user.email "apix-bot@users.noreply.github.com"
+          git add .github/heartbeat
+          git diff --staged --quiet || git commit -m "chore: keepalive [skip ci]"
+          git push
+
+  gap-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Report missing collection days
+        id: gaps
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python - <<'PY' | tee gaps.txt
+          from datetime import date, timedelta
+          from apix.store import Store
+          s = Store()
+          have = set(s.collected_dates())
+          today = date.today()
+          want = [today - timedelta(days=i) for i in range(1, 31)]
+          missing = [d for d in want if d not in have]
+          print(f"coverage: {30 - len(missing)}/30 days")
+          if missing:
+              print("missing: " + ", ".join(str(d) for d in missing))
+          PY
+          if grep -q "^missing:" gaps.txt; then
+            echo "has_gaps=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Flag gaps
+        if: steps.gaps.outputs.has_gaps == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('gaps.txt', 'utf8');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `APIx: gaps in the last 30 days`,
+              body: "```\n" + body + "\n```\n\n"
+                  + "The 30-day back-test needs an unbroken run. Gaps cannot be "
+                  + "recovered from live sources — document them as imputed days "
+                  + "in the methodology note rather than hiding them.",
+              labels: ['ops', 'collection-gap']
+            });

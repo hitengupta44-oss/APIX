@@ -1,0 +1,77 @@
+name: Refresh DGCA weights
+
+on:
+  schedule:
+    # DGCA publishes monthly domestic traffic with roughly a 4-6 week lag, and
+    # the community parse follows a few days behind that. Mid-month is safely
+    # after both.
+    - cron: "0 4 15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      - name: Rebuild weights from latest DGCA traffic
+        run: |
+          python -m scripts.build_weights --refresh --months 12 --top 30 \
+            | tee weights.log
+
+      - name: Check the basket did not move violently
+        # A weight vector that jumps is either a real market shift or a parsing
+        # break, and you cannot tell which from the numbers alone. Either way a
+        # human should look before it starts multiplying published index values.
+        run: |
+          python - <<'PY'
+          import yaml, sys, subprocess
+          new = yaml.safe_load(open("config/route_weights.yaml"))
+          old_raw = subprocess.run(
+              ["git", "show", "HEAD:config/route_weights.yaml"],
+              capture_output=True, text=True)
+          if old_raw.returncode != 0:
+              print("no previous weights to compare against"); sys.exit(0)
+          old = yaml.safe_load(old_raw.stdout)
+          o = {r["route"]: r["weight"] for r in old["routes"]}
+          n = {r["route"]: r["weight"] for r in new["routes"]}
+
+          dropped = set(o) - set(n)
+          added   = set(n) - set(o)
+          moves   = {k: (n[k] - o[k]) / o[k] for k in set(o) & set(n) if o[k] > 0}
+          big     = {k: v for k, v in moves.items() if abs(v) > 0.25}
+
+          print(f"coverage: {new['coverage']['mapped_coverage']:.1%} mapped, "
+                f"{new['coverage']['basket_coverage']:.1%} of market")
+          if dropped: print(f"::warning::routes dropped from basket: {sorted(dropped)}")
+          if added:   print(f"::notice::routes added: {sorted(added)}")
+          for k, v in sorted(big.items(), key=lambda x: -abs(x[1])):
+              print(f"::warning::{k} weight moved {v:+.1%}")
+
+          if new["coverage"]["mapped_coverage"] < 0.90:
+              sys.exit("city-name mapping fell below 90% — DGCA probably renamed "
+                       "cities again; update CITY_TO_IATA in scripts/build_weights.py")
+          PY
+
+      - name: Open a PR
+        # Deliberately a PR, not a direct commit. Weights are the one input that
+        # silently rescales every published number, so they get a human review.
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/refresh-weights
+          title: "chore: refresh DGCA route weights"
+          body-file: weights.log
+          commit-message: "chore: refresh DGCA route weights"
+          add-paths: |
+            config/route_weights.yaml
+            data/dgca_domestic_city.csv
+          labels: weights, needs-review
