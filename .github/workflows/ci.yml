@@ -55,11 +55,12 @@ jobs:
               sys.exit("basket invalid: " + "; ".join(bad))
           PY
 
-      - name: Dry-run the collection job
-        # Exercises the whole path — config load, source construction,
-        # compliance gate, cleaning, store serialisation — without a network
-        # call or a credential.
-        run: python -m scripts.collect --dry-run
+      - name: Validate configuration
+        # Config load, adapter import, compliance-gate policy checks and weight
+        # normalisation — with no network call, no credential and no write.
+        # `--dry-run` is NOT usable here: it stubs the database but sources
+        # still construct for real and would make live requests.
+        run: python -m scripts.collect --validate
 
   keepalive:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
