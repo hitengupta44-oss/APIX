@@ -17,7 +17,9 @@ import logging
 import sys
 from datetime import date, timedelta
 
-from apix.collector import collect_day, index_config_from_basket, load_basket
+from apix.collector import (
+    collect_day, index_config_from_basket, load_basket, validate,
+)
 from apix.index import elementary_aggregates
 from apix.store import Store
 
@@ -82,10 +84,18 @@ def main() -> int:
     p.add_argument("--date", type=date.fromisoformat, default=None)
     p.add_argument("--backfill", type=int, default=0,
                    help="also re-collect any missing days in the last N days")
-    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--dry-run", action="store_true",
+                   help="skip database writes; sources still make requests")
+    p.add_argument("--validate", action="store_true",
+                   help="check config only — no network, no credentials, "
+                        "no writes. This is what CI runs.")
     args = p.parse_args()
 
     basket = load_basket(args.basket)
+
+    if args.validate:
+        validate(basket)
+        return 0
     store = Store(dry_run=args.dry_run)
     store.register_basket(basket)
 
