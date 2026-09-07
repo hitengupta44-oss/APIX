@@ -112,8 +112,16 @@ jobs:
     needs: [collect, rebuild]
     if: failure()
     runs-on: ubuntu-latest
+    # The top-level `permissions: contents: read` applies to every job, so the
+    # default token cannot open an issue and the alert fails with a 403 —
+    # meaning a failed collection is reported by a second failure rather than a
+    # readable notice. Granted per-job so the wider token stays read-only.
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Open an issue
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
