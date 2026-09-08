@@ -72,6 +72,16 @@ def run_one(basket: dict, store: Store, run_date: date) -> int:
         raise
 
 
+# Sources that can genuinely reproduce a past observation date. Everything
+# else observes only "now", whatever date you ask it for.
+REPLAYABLE = ("replay:",)
+
+
+def can_backfill(basket: dict) -> bool:
+    return any(s["name"].startswith(REPLAYABLE)
+               for s in basket.get("sources", []) if s.get("enabled"))
+
+
 def find_gaps(store: Store, days: int, today: date) -> list[date]:
     have = set(store.collected_dates())
     want = [today - timedelta(days=i) for i in range(1, days + 1)]
@@ -104,14 +114,25 @@ def main() -> int:
 
     if args.backfill:
         gaps = find_gaps(store, args.backfill, run_date)
-        if gaps:
-            # Backfill is best-effort and honest about what it is: fares for a
-            # past collection date cannot be recovered from a live source. It
-            # only helps when the gap is on the storage side, or when a replay
-            # archive covers the window.
-            log.warning("gaps detected: %s", ", ".join(str(g) for g in gaps))
-            log.warning("live sources cannot recover a past observation date; "
-                        "these will only fill from a replay archive")
+        if gaps and not can_backfill(basket):
+            # Running a live source against a past date does not recover that
+            # day — the request still happens now. Worse, it silently corrupts
+            # the panel: departure dates are computed from the target date
+            # while the observation timestamp is today, so every lead time is
+            # offset by the gap and falls outside the tolerance of any target
+            # window. On 2026-09-05 that produced 66 quotes and zero usable
+            # cells, while 2026-09-06 produced 70 of each. Same code, different
+            # offset.
+            log.warning(
+                "gaps at %s cannot be filled: no replay source is enabled and "
+                "live sources only ever observe the present. Skipping backfill. "
+                "Record these as missing days in the methodology note rather "
+                "than collecting quotes that will not bucket.",
+                ", ".join(str(g) for g in gaps),
+            )
+        elif gaps:
+            log.info("backfilling from replay archive: %s",
+                     ", ".join(str(g) for g in gaps))
             targets = gaps + targets
 
     worst = 0
