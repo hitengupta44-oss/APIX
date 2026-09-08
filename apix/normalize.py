@@ -87,12 +87,30 @@ def clean(df: pd.DataFrame, *, iqr_k: float = 3.0, min_fare: float = 800.0,
     if live.sum() > 0:
         sub = df.loc[live].copy()
         sub["_log"] = np.log(sub["total_fare"])
-        g = sub.groupby(["quote_date", "origin", "destination", "apw_bucket"
-                         if "apw_bucket" in sub.columns else "apw_days", "cabin"])["_log"]
-        q1, q3 = g.transform(lambda s: s.quantile(0.25)), g.transform(lambda s: s.quantile(0.75))
-        iqr = q3 - q1
+
+        # dropna=False is essential. `apw_bucket` is NaN whenever an observed
+        # lead time falls outside the tolerance of any target window, and
+        # pandas 2 drops NaN group keys by default — so transform returns fewer
+        # rows than `sub`, and comparing the two raises "Can only compare
+        # identically-labeled Series objects". pandas 3 aligns instead, so this
+        # crashed only in CI and only on the days that happened to contain an
+        # unbucketed quote.
+        key = ["quote_date", "origin", "destination", "cabin"]
+        key.insert(3, "apw_bucket" if "apw_bucket" in sub.columns else "apw_days")
+        g = sub.groupby(key, dropna=False)["_log"]
+
+        q1 = g.transform(lambda s: s.quantile(0.25))
+        q3 = g.transform(lambda s: s.quantile(0.75))
         n = g.transform("size")
-        out = (n >= 5) & ((sub["_log"] < q1 - iqr_k * iqr) | (sub["_log"] > q3 + iqr_k * iqr))
+        # Reindex defensively so a future pandas change cannot reintroduce the
+        # misalignment silently.
+        q1, q3, n = (x.reindex(sub.index) for x in (q1, q3, n))
+        iqr = q3 - q1
+
+        out = (n >= 5) & (
+            (sub["_log"] < q1 - iqr_k * iqr) | (sub["_log"] > q3 + iqr_k * iqr)
+        )
+        out = out.fillna(False).astype(bool)
         mark(df.index.isin(sub.index[out]), "outlier_iqr")
 
     kept = df["drop_reason"].isna().sum()
